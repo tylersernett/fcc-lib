@@ -1,12 +1,7 @@
-/*
-*
-*
-*       Complete the API routing below
-*       
-*       
-*/
-
 'use strict';
+const mongoose = require('mongoose');
+const BookModel = require('../models').Book;
+
 
 module.exports = function (app) {
 
@@ -20,6 +15,26 @@ module.exports = function (app) {
     .post(function (req, res) {
       let title = req.body.title;
       console.log(req.body)
+
+      if (!title) {
+        return res.json("missing required field title");
+      }
+
+      //assign all req.body vars to newIssue object
+      const newBook = new BookModel({
+        title: title,
+        //comments: [],
+        //commentcount: 0,
+      });
+
+      newBook.save((err, data) => {
+        if (err || !data) {
+          return res.json({ error: "Error saving post" });
+        } else {
+          console.log('save success')
+          return res.json(newBook); 
+        }
+      });
     })
 
     .delete(function (req, res) {
