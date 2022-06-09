@@ -11,15 +11,30 @@ module.exports = function (app) {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
       console.log(req.body);
-      BookModel.find({}, (err, docs)=> {
+      let returnArr = [];
+      // run()
+      // async function run() {
+      BookModel.find({}, async (err, docs) => {
         if (err) {
           return res.json('error loading books');
         } else {
           console.log(docs);
-          return;
+          //await here and do not procede to return statement until the Promise is fulfilled
+          await Promise.all(docs.map(async (book) => {
+            let bookObj = {};
+            bookObj['_id'] = book._id;
+            bookObj['title'] = book.title
+            //need to await below or you'll just get an empty object for commentcount
+            bookObj['commentcount'] = await CommentModel.where({ bookid: book._id }).countDocuments().exec();
+            returnArr.push(bookObj);
+          }));
+          return res.json(returnArr);
         }
-      });
+      })
+      //};
     })
+
+
 
     .post(function (req, res) {
       let title = req.body.title;
