@@ -10,7 +10,15 @@ module.exports = function (app) {
     .get(function (req, res) {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
-      console.log(req.body)
+      console.log(req.body);
+      BookModel.find({}, (err, docs)=> {
+        if (err) {
+          return res.json('error loading books');
+        } else {
+          console.log(docs);
+          return;
+        }
+      });
     })
 
     .post(function (req, res) {
@@ -23,8 +31,6 @@ module.exports = function (app) {
 
       const newBook = new BookModel({
         title: title,
-        //comments: [],
-        //commentcount: 0,
       });
 
       newBook.save((err, data) => {
@@ -43,12 +49,37 @@ module.exports = function (app) {
     });
 
 
-
+  //http://localhost:3000/api/books/62a16eb130ae763a98330cfb
+  //empty:  http://localhost:3000/api/books/62a1748a431d7a4ca8761958
   app.route('/api/books/:id')
     .get(function (req, res) {
       let bookid = req.params.id;
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
-      console.log(req.body)
+      console.log(req.body);
+
+      //first make sure book exists...
+      BookModel.findById(bookid, (err, doc) => {
+        if (err) {
+          return res.json("no book exists");
+        } else {
+          const return_title = doc.title;
+          //...then find each comment with matching bookid, and push to array
+          CommentModel.find({ bookid: bookid }, (error, docs) => {
+            if (error) {
+              return res.json("error loading comments");
+            } else {
+              console.log(docs);
+              let return_comments = [];
+              docs.forEach(ele => {
+                return_comments.push(ele.content);
+              });
+
+              return res.json({ _id: bookid, title: return_title, comments: return_comments });
+            }
+
+          })
+        }
+      })
     })
 
     .post(function (req, res) {
