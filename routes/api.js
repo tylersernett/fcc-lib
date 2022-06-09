@@ -21,20 +21,18 @@ module.exports = function (app) {
           console.log(docs);
           //await here and do not procede to return statement until the Promise is fulfilled
           await Promise.all(docs.map(async (book) => {
-            let bookObj = {};
-            bookObj['_id'] = book._id;
-            bookObj['title'] = book.title
-            //need to await below or you'll just get an empty object for commentcount
-            bookObj['commentcount'] = await CommentModel.where({ bookid: book._id }).countDocuments().exec();
-            returnArr.push(bookObj);
+            returnArr.push({
+              _id: book._id,
+              title: book.title,
+              commentcount: await CommentModel.where({ bookid: book._id }).countDocuments().exec()
+              //need to await above or you'll just get an empty object for commentcount
+            });
           }));
           return res.json(returnArr);
         }
       })
       //};
     })
-
-
 
     .post(function (req, res) {
       let title = req.body.title;
@@ -71,7 +69,6 @@ module.exports = function (app) {
       let bookid = req.params.id;
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
       console.log(req.body);
-
       //first make sure book exists...
       BookModel.findById(bookid, (err, doc) => {
         if (err) {
@@ -88,14 +85,13 @@ module.exports = function (app) {
               docs.forEach(ele => {
                 return_comments.push(ele.content);
               });
-
               return res.json({ _id: bookid, title: return_title, comments: return_comments });
             }
-
           })
         }
       })
     })
+
 
     .post(function (req, res) {
       let bookid = req.params.id;
@@ -127,7 +123,6 @@ module.exports = function (app) {
         }
       })
     })
-
 
 
     .delete(function (req, res) {
