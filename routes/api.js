@@ -1,6 +1,7 @@
 'use strict';
 const mongoose = require('mongoose');
 const BookModel = require('../models').Book;
+const CommentModel = require('../models').Comment;
 
 
 module.exports = function (app) {
@@ -20,7 +21,6 @@ module.exports = function (app) {
         return res.json("missing required field title");
       }
 
-      //assign all req.body vars to newIssue object
       const newBook = new BookModel({
         title: title,
         //comments: [],
@@ -31,8 +31,8 @@ module.exports = function (app) {
         if (err || !data) {
           return res.json({ error: "Error saving post" });
         } else {
-          console.log('save success')
-          return res.json(newBook); 
+          console.log('book save success')
+          return res.json(newBook);
         }
       });
     })
@@ -54,10 +54,35 @@ module.exports = function (app) {
     .post(function (req, res) {
       let bookid = req.params.id;
       let comment = req.body.comment;
+
+      if (!comment) {
+        return res.json("missing required field comment")
+      }
       console.log(req.body)
       console.log(req.params)
       //json res format same as .get
+      BookModel.findById(bookid, (err, doc) => {
+        if (err) {
+          return res.json("no book exists")
+        } else {
+          const newComment = new CommentModel({
+            content: comment,
+            bookid: bookid
+          });
+
+          newComment.save((error, data) => {
+            if (error || !data) {
+              return res.json({ error: "Error saving comment" });
+            } else {
+              console.log('comment save success')
+              return res.json(doc);
+            }
+          });
+        }
+      })
     })
+
+
 
     .delete(function (req, res) {
       let bookid = req.params.id;
