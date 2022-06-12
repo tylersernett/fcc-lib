@@ -128,6 +128,12 @@ module.exports = function (app) {
     .delete(function (req, res) {
       let bookid = req.params.id;
       //if successful response will be 'delete successful'
+      BookModel.findByIdAndDelete(bookid, (err, doc) => {
+        if (err) {
+          return res.json("error deleting") 
+        } else {
+          return res.json('delete successful')
+        }
     });
 
 };
