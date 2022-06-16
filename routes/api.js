@@ -14,12 +14,12 @@ module.exports = function (app) {
         docs.forEach(ele => {
           return_comments.push(ele.content);
         });
-        console.log("pre return:")
-        console.log(return_comments)
+        // console.log("pre return:")
+        // console.log(return_comments)
       }
     })
-    console.log("pre BIG return:")
-    console.log(return_comments)
+    // console.log("pre BIG return:")
+    // console.log(return_comments)
     return return_comments;
   }
 
@@ -93,27 +93,30 @@ module.exports = function (app) {
   app.route('/api/books/:id')
     .get(async function (req, res) {
       let bookid = req.params.id;
+      if (!mongoose.Types.ObjectId.isValid(bookid)) {
+        return res.json("no book exists");
+      }
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
-      console.log(req.body);
       //first make sure book exists...
-      const book = await BookModel.findById(bookid, async (err, doc) => {
-        if (err) {
+      await BookModel.findById(bookid, async (err, doc) => {
+        if (err || !doc ) {
           return res.json("no book exists");
         } else {
           //const return_title = 
           //...then find each comment with matching bookid, and push to array
-          console.log("pre function")
+          //console.log("pre function")
           let return_comments = [];
-          let run = async () => {
-            return_comments = await findComments(bookid);
-            console.log("post function: ")
-            console.log(return_comments)
-            //return res.json({ _id: bookid, title: doc.title, comments: return_comments });
-          }
-          await run();
-          //let return_comments = findComments(bookid);
-          console.log("final func: \n")
-          console.log(return_comments)
+          return_comments = await findComments(bookid);
+
+          // let run = async () => {
+          //   return_comments = await findComments(bookid);
+          //   //console.log("post function: ")
+          //   //console.log(return_comments)
+          //   //return res.json({ _id: bookid, title: doc.title, comments: return_comments });
+          // }
+          // await run();
+          //console.log("final func: \n")
+          //console.log(return_comments)
           return res.json({ _id: bookid, title: doc.title, comments: return_comments });
         }
       })
@@ -127,11 +130,14 @@ module.exports = function (app) {
       if (!comment) {
         return res.json("missing required field comment")
       }
+      if (!mongoose.Types.ObjectId.isValid(bookid)) {
+        return res.json("no book exists");
+      }
       console.log(req.body)
       console.log(req.params)
       //json res format same as .get
       BookModel.findById(bookid, (err, doc) => {
-        if (err) {
+        if (err || !doc) {
           return res.json("no book exists")
         } else {
           const newComment = new CommentModel({
@@ -139,17 +145,24 @@ module.exports = function (app) {
             bookid: bookid
           });
 
-          newComment.save((error, data) => {
+          newComment.save(async (error, data) => {
             if (error || !data) {
               return res.json({ error: "Error saving comment" });
             } else {
               console.log('comment save success')
-              doc['comments'] = findComments(bookid);
-              return res.json(doc);
+              console.log("pre find")
+              let commentArray = [];
+              commentArray = await findComments(bookid);
+              //doc['comments'] = commentArray;
+              console.log("post find")
+              console.log(commentArray)
+              console.log({ _id: bookid, title: doc.title, comments: commentArray })
+              return res.json({ _id: bookid, title: doc.title, comments: commentArray });
+              //doc['comments'] = await findComments(bookid);
+              //return res.json(doc);
             }
           });
-          //doc['comments'] = await findComments(bookid);
-          //return res.json(doc);
+
         }
       })
     })
@@ -159,8 +172,8 @@ module.exports = function (app) {
       let bookid = req.params.id;
       //if successful response will be 'delete successful'
       BookModel.findByIdAndDelete(bookid, (err, doc) => {
-        if (err) {
-          return res.json("error deleting")
+        if (err || !doc) {
+          return res.json("no book exists")
         } else {
           return res.json('delete successful')
         }
