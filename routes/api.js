@@ -5,6 +5,23 @@ const CommentModel = require('../models').Comment;
 
 
 module.exports = function (app) {
+  const findComments = async (id) => {
+    let return_comments = [];
+    await CommentModel.find({ bookid: id }, (error, docs) => {
+      if (error) {
+        return res.json("error loading comments");
+      } else {
+        docs.forEach(ele => {
+          return_comments.push(ele.content);
+        });
+        console.log("pre return:")
+        console.log(return_comments)
+      }
+    })
+    console.log("pre BIG return:")
+    console.log(return_comments)
+    return return_comments;
+  }
 
   app.route('/api/books')
     .get(function (req, res) {
@@ -69,46 +86,35 @@ module.exports = function (app) {
       })
     });
 
-  const findComments = (id) => {
-    CommentModel.find({ bookid: id }, (error, docs) => {
-      if (error) {
-        return res.json("error loading comments");
-      } else {
-        console.log(docs);
-        let return_comments = [];
-        docs.forEach(ele => {
-          return_comments.push(ele.content);
-        });
-        return return_comments;
-      }
-    })
-  }
+
+
   //http://localhost:3000/api/books/62a16eb130ae763a98330cfb
   //empty:  http://localhost:3000/api/books/62a1748a431d7a4ca8761958
   app.route('/api/books/:id')
-    .get(function (req, res) {
+    .get(async function (req, res) {
       let bookid = req.params.id;
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
       console.log(req.body);
       //first make sure book exists...
-      BookModel.findById(bookid, (err, doc) => {
+      const book = await BookModel.findById(bookid, async (err, doc) => {
         if (err) {
           return res.json("no book exists");
         } else {
-          const return_title = doc.title;
+          //const return_title = 
           //...then find each comment with matching bookid, and push to array
-          CommentModel.find({ bookid: bookid }, (error, docs) => {
-            if (error) {
-              return res.json("error loading comments");
-            } else {
-              console.log(docs);
-              let return_comments = [];
-              docs.forEach(ele => {
-                return_comments.push(ele.content);
-              });
-              return res.json({ _id: bookid, title: return_title, comments: return_comments });
-            }
-          })
+          console.log("pre function")
+          let return_comments = [];
+          let run = async () => {
+            return_comments = await findComments(bookid);
+            console.log("post function: ")
+            console.log(return_comments)
+            //return res.json({ _id: bookid, title: doc.title, comments: return_comments });
+          }
+          await run();
+          //let return_comments = findComments(bookid);
+          console.log("final func: \n")
+          console.log(return_comments)
+          return res.json({ _id: bookid, title: doc.title, comments: return_comments });
         }
       })
     })
@@ -142,6 +148,8 @@ module.exports = function (app) {
               return res.json(doc);
             }
           });
+          //doc['comments'] = await findComments(bookid);
+          //return res.json(doc);
         }
       })
     })
