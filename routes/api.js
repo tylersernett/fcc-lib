@@ -59,9 +59,30 @@ module.exports = function (app) {
     .delete(function (req, res) {
       //if successful response will be 'complete delete successful'
       console.log(req.body)
+      //pass in empty object {} to match ALL books
+      BookModel.deleteMany({}, (err, data) => {
+        if (err) {
+          return res.json("error deleting all");
+        } else {
+          return res.json('complete delete successful');
+        }
+      })
     });
 
-
+  const findComments = (id) => {
+    CommentModel.find({ bookid: id }, (error, docs) => {
+      if (error) {
+        return res.json("error loading comments");
+      } else {
+        console.log(docs);
+        let return_comments = [];
+        docs.forEach(ele => {
+          return_comments.push(ele.content);
+        });
+        return return_comments;
+      }
+    })
+  }
   //http://localhost:3000/api/books/62a16eb130ae763a98330cfb
   //empty:  http://localhost:3000/api/books/62a1748a431d7a4ca8761958
   app.route('/api/books/:id')
@@ -117,6 +138,7 @@ module.exports = function (app) {
               return res.json({ error: "Error saving comment" });
             } else {
               console.log('comment save success')
+              doc['comments'] = findComments(bookid);
               return res.json(doc);
             }
           });
@@ -130,11 +152,11 @@ module.exports = function (app) {
       //if successful response will be 'delete successful'
       BookModel.findByIdAndDelete(bookid, (err, doc) => {
         if (err) {
-          return res.json("error deleting") 
+          return res.json("error deleting")
         } else {
           return res.json('delete successful')
         }
-    });
-  })
+      });
+    })
 
 };
